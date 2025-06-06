@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SaintXavitech AI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* Dark Mode Variables (Default) */
+    :root{
+        --bg1:#0a0f1f;
+        --bg2:#09244d;
+        --user:#1e88e5;
+        --bot:#222;
+        --blue:#007bff;
+        --light:#eee;
+        --red:#e53935;
+        --text-color:#eee;
+        --sidebar-bg:rgba(0,0,0,.7);
+        --chat-bg:rgba(0,0,0,.5);
+        --input-bg:rgba(255,255,255,.08);
+        --input-text-color:var(--light);
+        --input-placeholder-color:#aaa;
+        --border-color:#0d274e;
+    }
+
+    /* Light Mode Variables */
+    body.light-mode {
+        --bg1:#e0f2f7; /* Light blue background */
+        --bg2:#b3e0ed; /* Lighter blue background */
+        --user:#42a5f5; /* Lighter blue for user messages */
+        --bot:#f0f0f0; /* Off-white for bot messages */
+        --blue:#1976d2; /* Deeper blue for buttons/accents */
+        --light:#333; /* Darker text for light mode */
+        --red:#d32f2f;
+        --text-color:#333;
+        --sidebar-bg:rgba(255,255,255,.8); /* Lighter sidebar */
+        --chat-bg:rgba(255,255,255,.7); /* Lighter chat background */
+        --input-bg:#ffffff; /* White input */
+        --input-text-color:#333;
+        --input-placeholder-color:#666;
+        --border-color:#b0bec5; /* Lighter border */
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Poppins,Arial,sans-serif}
+    html,body{height:100%;width:100%;scroll-behavior:smooth;
+             background:linear-gradient(135deg,var(--bg1),var(--bg2));
+             color:var(--text-color);
+    }
+
+    /* sidebar */
+    .sidebar{position:fixed;top:0;left:0;height:100%;width:200px;
+             background:var(--sidebar-bg);backdrop-filter:blur(8px);
+             border-right:1px solid var(--border-color);display:flex;flex-direction:column;z-index:2000}
+    .sidebar h3{color:var(--text-color);text-align:center;margin:18px 0;font-size:1.3rem}
+    .nav-item{color:var(--text-color);padding:14px 22px;cursor:pointer;display:flex;gap:10px;align-items:center;
+              transition:.2s;font-size:.95rem;user-select:none}
+    .nav-item:hover,.nav-item.active{background:rgba(0,123,255,.25);color:#fff}
+
+    .main{margin-left:200px;width:calc(100% - 200px);}
+
+    /* chat box - applied to AI, Math, Translate, Settings, Image Detector */
+    .chat{height:100vh;max-width:1000px;
+          margin:0 auto;display:flex;flex-direction:column;
+          background:var(--chat-bg);backdrop-filter:blur(5px);border-radius:16px;
+          border-bottom:5px solid var(--blue);box-shadow:0 10px 30px rgba(0,123,255,.35);overflow:hidden;
+          position: relative;z-index: 1000;
+    }
+    h2{padding:16px;text-align:center;font-size:1.6rem;color:var(--text-color);border-bottom:1px solid var(--blue)}
+
+    /* Message/Output containers */
+    #msgs, #mathMsgs, #translateContent, #settingsContent,
+    #imageDetectorContent { /* Updated for removed section */
+        flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;
+    }
+    /* Specific styling for translate input/output to look like messages */
+    #translateInput, #translateOutput,
+    #imageDetectorPrompt, #imageDetectorOutput { /* Updated for removed section */
+        flex: none; /* Do not grow */
+        height: 150px; /* Fixed height for textareas */
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--input-text-color);
+        font-size: 1rem;
+        resize: vertical; /* Allow vertical resizing for textareas */
+        overflow-y: auto;
+    }
+    #translateOutput, #imageDetectorOutput { /* Updated for removed section */
+        background: var(--bot); /* Use bot message background for output */
+        color: var(--light);
+        min-height: 100px; /* Ensure it's visible even when empty */
+        border: 1px solid var(--bot); /* Match bot border */
+        box-shadow: inset 0 1px 3px rgba(0,0,0,.2); /* Subtle inner shadow */
+    }
+
+
+    .msg{padding:14px 18px;border-radius:12px;max-width:80%;white-space:pre-wrap;font-size:1.05rem;box-shadow:0 2px 8px rgba(0,0,0,.4);
+         transition: all 0.3s ease-out;
+    }
+    .user{align-self:flex-end;background:var(--user);color:#fff}
+    .bot {align-self:flex-start;background:var(--bot);color:var(--light)}
+    .error{background:#651616;color:#ffd7d7}
+    .row{display:flex;gap:12px;padding:16px;background:rgba(10,20,40,.85);border-top:1px solid var(--blue)}
+    /* Input field styling based on theme variables */
+    .row input{flex:1;padding:14px;border-radius:10px;border:1px solid var(--border-color);
+               background:var(--input-bg);color:var(--input-text-color);}
+    .row input::placeholder{color:var(--input-placeholder-color)}
+
+    button{padding:14px 18px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
+    button:hover{background:#0056b3}
+
+    /* Microphone Button Specific Styles */
+    #micBtn {
+        background-color: var(--blue);
+        color: white;
+        font-size: 1.2rem;
+        width: 50px;
+        flex-shrink: 0;
+        display: flex;align-items: center;justify-content: center;padding: 0;
+    }
+    #micBtn.listening {
+        background-color: var(--red);
+        box-shadow: 0 0 15px var(--red);
+    }
+    #micBtn:hover {
+        background-color: #0056b3;
+    }
+    #micBtn.listening:hover {
+        background-color: #c62828;
+    }
+
+    /* Backgrounds for Sections */
+    #chat-section::before {
+        content: "";position: absolute;top: 0;left: 0;width: 100%;height: 100%;
+        background-image: url('https://www.transparenttextures.com/patterns/cartoonish.png');
+        background-size: 200px;background-repeat: repeat;opacity: 0.15;z-index: 0;
+    }
+    #math-section::before {
+        content: "";position: absolute;top: 0;left: 0;width: 100%;height: 100%;
+        background-image: url('https://www.transparenttextures.com/patterns/squares.png');
+        background-size: 100px;background-repeat: repeat;opacity: 0.25;z-index: 0;
+    }
+    #translate-section::before {
+        content: "";position: absolute;top: 0;left: 0;width: 100%;height: 100%;
+        background-image: url('https://www.transparenttextures.com/patterns/sprinkles.png');
+        background-size: 180px;background-repeat: repeat;opacity: 0.18;z-index: 0;
+    }
+    #settings-section::before {
+        content: "";position: absolute;top: 0;left: 0;width: 100%;height: 100%;
+        background-image: url('https://www.transparenttextures.com/patterns/dust-3d.png');
+        background-size: 150px;background-repeat: repeat;opacity: 0.2;z-index: 0;
+    }
+    /* Updated Section Backgrounds */
+    #image-detector-section::before {
+        content: "";position: absolute;top: 0;left: 0;width: 100%;height: 100%;
+        background-image: url('https://www.transparenttextures.com/patterns/diagmonds.png');
+        background-size: 120px;background-repeat: repeat;opacity: 0.22;z-index: 0;
+    }
+
+    #chat-section, #math-section, #translate-section, #settings-section,
+    #image-detector-section { /* Updated for removed section */
+        position: relative;height: 100vh;display: flex;justify-content: center;align-items: center;overflow: hidden;
+    }
+    #chat-section .chat, #math-section .chat, #translate-section .chat, #settings-section .chat,
+    #image-detector-section .chat { /* Updated for removed section */
+        height: 100%;width: 100%;position: relative;z-index: 1;
+    }
+
+    /* Settings content specific styles (reused for general settings-like layout) */
+    .settings-group {
+        margin-bottom: 25px;
+        padding: 15px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 10px;
+    }
+    .settings-group h3 {
+        margin-bottom: 15px;
+        color: var(--blue);
+        font-size: 1.2rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding-bottom: 8px;
+    }
+    .settings-option label {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .settings-option input[type="radio"],
+    .settings-option input[type="checkbox"] {
+        margin-right: 5px;
+        transform: scale(1.2);
+    }
+    /* Simple toggle switch style */
+    .switch {
+      position: relative;display: inline-block;width: 40px;height: 24px;
+    }
+    .switch input {opacity: 0;width: 0;height: 0;}
+    .slider {
+      position: absolute;cursor: pointer;top: 0;left: 0;right: 0;bottom: 0;
+      background-color: #ccc;transition: .4s;border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;content: "";height: 16px;width: 16px;left: 4px;bottom: 4px;
+      background-color: white;transition: .4s;border-radius: 50%;
+    }
+    input:checked + .slider {background-color: var(--blue);}
+    input:checked + .slider:before {transform: translateX(16px);}
+    .slider.round {border-radius: 24px;}
+    .slider.round:before {border-radius: 50%;}
+
+    /* Translate, Image Detector common layout for input/output */
+    #translateContent, #imageDetectorContent { /* Updated for removed section */
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+    }
+    #translateContent .row, #imageDetectorContent .row { /* Updated for removed section */
+        background: none;
+        border-top: none;
+        padding: 0;
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+    }
+    #translateContent .row button, #imageDetectorContent .row button { /* Updated for removed section */
+        flex: 1;
+        margin: 0 5px;
+    }
+    #translateDirection {
+        text-align: center;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: var(--text-color);
+        font-weight: 600;
+    }
+
+    /* Image Preview in Detector */
+    #imagePreviewContainer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: 150px;
+        background: var(--input-bg);
+        border: 1px dashed var(--border-color);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        overflow: hidden; /* Hide overflow for large images */
+    }
+    #imagePreviewContainer img {
+        max-width: 100%;
+        max-height: 150px; /* Constrain height */
+        object-fit: contain; /* Ensure image fits without distortion */
+        display: block; /* Remove extra space below image */
+    }
+    #imagePreviewContainer p {
+        color: var(--input-placeholder-color);
+        font-style: italic;
+    }
+
+    /* New button specific style */
+    #chooseImageBtn {
+        margin-top: 10px; /* Space between preview box and button */
+        width: 100%; /* Make button span full width */
+        padding: 12px;
+    }
+
+    /* Initial state for active section on load */
+    #chat-section.active-section,
+    #math-section.active-section,
+    #translate-section.active-section,
+    #settings-section.active-section,
+    #image-detector-section.active-section { /* Updated for removed section */
+        display: flex;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <h3 id="sidebarTitle">SaintXavi Menu</h3>
+    <div class="nav-item active" id="navItemAI" onclick="navTo('chat-section', this)">💬 Ask AI</div>
+    <div class="nav-item" id="navItemMath" onclick="navTo('math-section', this)">📐 Math Solver</div>
+    <div class="nav-item" id="navItemTranslate" onclick="navTo('translate-section', this)">🌐 Translate</div>
+    <div class="nav-item" id="navItemImageDetector" onclick="navTo('image-detector-section', this)">🔍 Image Detector</div>
+    <div class="nav-item" id="navItemSettings" onclick="navTo('settings-section', this)">⚙️ Settings</div>
+  </nav>
+
+  <div class="main">
+
+    <section id="chat-section">
+      <div class="chat">
+        <h2 id="chatTitle">SaintXavitech AI</h2>
+        <div id="msgs"></div>
+        <div class="row">
+          <input id="input" placeholder="Ask me something…" autocomplete="off">
+          <button id="micBtn" title="Voice Input">🎙️</button>
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="math-section">
+      <div class="chat">
+        <h2 id="mathTitle">📐 Math Solver</h2>
+        <div id="mathMsgs">
+            </div>
+        <div class="row">
+          <input id="mathInput" placeholder="Tell me your math problem…" autocomplete="off">
+          <button id="mathSendBtn">Solve</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="translate-section">
+        <div class="chat">
+            <h2 id="translateTitle">🌐 Translate</h2>
+            <div id="translateContent">
+                <p id="translateDirection">English to Bengali</p>
+                <textarea id="translateInput" placeholder="Enter text to translate (English)..."></textarea>
+                <div class="row">
+                    <button id="swapLangBtn">↔️ Swap Language</button>
+                    <button id="translateBtn">Translate</button>
+                </div>
+                <div id="translateOutput"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="image-detector-section">
+        <div class="chat">
+            <h2 id="imageDetectorTitle">🔍 Image Detector</h2>
+            <div id="imageDetectorContent">
+                <p class="msg bot" id="imageDetectorIntroMsg"></p>
+                <div id="imagePreviewContainer">
+                    <p id="imagePreviewPlaceholder">No image selected</p>
+                    <img id="uploadedImagePreview" src="" alt="Image Preview" style="display: none;">
+                </div>
+                <input type="file" id="imageUploadInput" accept="image/*" style="display: none;"> <button id="chooseImageBtn">Choose Image</button> <textarea id="imageDetectorPrompt" placeholder="Ask a question about the image (e.g., 'Describe this image', 'What objects are in this picture?', 'Where is this taken?')."></textarea>
+                <div class="row">
+                    <button id="analyzeImageBtn">Analyze Image</button>
+                </div>
+                <div id="imageDetectorOutput"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="settings-section">
+      <div class="chat">
+        <h2 id="settingsTitle">⚙️ Settings</h2>
+        <div id="settingsContent">
+            <div class="settings-group">
+                <h3 id="themeHeading">Theme Mode</h3>
+                <div class="settings-option">
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span id="darkModeLabel">Dark Mode</span>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3 id="languageHeading">Language</h3>
+                <div class="settings-option">
+                    <label>
+                        <input type="radio" name="language" value="en" id="langEnglishRadio">
+                        <span id="langEnglishLabel">English</span>
+                    </label>
+                </div>
+                <div class="settings-option">
+                    <label>
+                        <input type="radio" name="language" value="bn" id="langBengaliRadio">
+                        <span id="langBengaliLabel">বাংলা</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    /* ----- Language Translations Data ----- */
+    const translations = {
+        'en': {
+            sidebar_title: 'SaintXavi Menu',
+            sidebar_ask_ai: '💬 Ask AI',
+            sidebar_math_solver: '📐 Math Solver',
+            sidebar_translate: '🌐 Translate',
+            sidebar_image_detector: '🔍 Image Detector', // Updated
+            sidebar_settings: '⚙️ Settings',
+
+            chat_title: 'SaintXavitech AI',
+            chat_placeholder: 'Ask me something…',
+            send_button: 'Send',
+            mic_button: '🎙️',
+            mic_listening: 'Listening...',
+            chat_initial_bot_message_prompt: 'Hello! How can I help you today?',
+
+            math_title: '📐 Math Solver',
+            math_initial_bot_message: 'Hi there, young mathematician! What number puzzle or equation can I help you with today?',
+            math_placeholder: 'Tell me your math problem…',
+            solve_button: 'Solve',
+            math_solver_initial_prompt: 'You are an expert math solver for children. Provide precise and accurate answers to mathematical expressions, equations, and problems. Explain steps simply. Only answer math questions. Be encouraging and friendly.',
+
+            translate_title: '🌐 Translate',
+            translate_initial_message: 'Hello! Enter text to translate. Click "Swap Language" to change direction.',
+            translate_placeholder_en_to_bn: 'Enter English text to translate...',
+            translate_placeholder_bn_to_en: 'বাংলা লেখা লিখুন অনুবাদের জন্য...',
+            translate_direction_en_to_bn: 'English to Bengali',
+            translate_direction_bn_to_en: 'Bengali to English',
+            swap_lang_button: '↔️ Swap Language',
+            translate_button: 'Translate',
+
+            image_detector_title: '🔍 Image Detector', // Updated
+            image_detector_intro_msg: 'Upload an image and ask the AI to describe it or answer questions about its content.', // Updated
+            image_preview_placeholder: 'No image selected', // Updated
+            choose_image_button: 'Choose Image', // New
+            image_detector_prompt_placeholder: 'Ask a question about the image (e.g., "Describe this image", "What objects are in this picture?", "Where is this taken?").', // Updated
+            analyze_image_button: 'Analyze Image', // Updated
+            image_detector_no_image_error: 'Please upload an image first.', // Updated
+
+            settings_title: '⚙️ Settings',
+            theme_heading: 'Theme Mode',
+            dark_mode_label: 'Dark Mode',
+            light_mode_label: 'Light Mode',
+            language_heading: 'Language',
+            english_label: 'English',
+            bengali_label: 'বাংলা',
+
+            input_error_math: 'Please enter a math expression or equation.',
+            input_error_translate: 'Please enter text to translate.',
+            mic_error_permission: '⚠️ Microphone permission denied. Please enable it in your browser settings.',
+            mic_error_generic: '⚠️ Speech recognition error: ',
+            bot_thinking: 'Bot is thinking …',
+            api_error: '⚠️ Error: ',
+            api_empty_reply: '⚠️ Empty reply from AI.',
+            network_error: '⚠️ Network Error: '
+        },
+        'bn': {
+            sidebar_title: 'সেন্টজাভি মেনু',
+            sidebar_ask_ai: '💬 এআইকে জিজ্ঞাসা করুন',
+            sidebar_math_solver: '📐 গণিত সমাধানকারী',
+            sidebar_translate: '🌐 অনুবাদ করুন',
+            sidebar_image_detector: '🔍 ছবি সনাক্তকারী', // Updated
+            sidebar_settings: '⚙️ সেটিংস',
+
+            chat_title: 'সেন্টজাভিটেক এআই',
+            chat_placeholder: 'আমাকে কিছু জিজ্ঞাসা করুন…',
+            send_button: 'পাঠান',
+            mic_button: '🎙️',
+            mic_listening: 'শুনছি...',
+            chat_initial_bot_message_prompt: 'নমস্কার! আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?',
+
+            math_title: '📐 গণিত সমাধানকারী',
+            math_initial_bot_message: 'নমস্কার, তরুণ গণিতবিদ! আজ আমি আপনাকে কোন সংখ্যা বা সমীকরণে সাহায্য করতে পারি?',
+            math_placeholder: 'আপনার গণিত সমস্যা বলুন…',
+            solve_button: 'সমাধান করুন',
+            math_solver_initial_prompt: 'আপনি শিশুদের জন্য একজন বিশেষজ্ঞ গণিত সমাধানকারী। গাণিতিক অভিব্যক্তি, সমীকরণ এবং সমস্যার সঠিক এবং নির্ভুল উত্তর প্রদান করুন। সহজভাবে ধাপগুলি ব্যাখ্যা করুন। শুধুমাত্র গণিত প্রশ্নের উত্তর দিন। উৎসাহজনক এবং বন্ধুত্বপূর্ণ হন।',
+
+            translate_title: '🌐 অনুবাদ করুন',
+            translate_initial_message: 'নমস্কার! অনুবাদ করার জন্য লেখা লিখুন। দিক পরিবর্তন করতে "ভাষা পরিবর্তন করুন" এ ক্লিক করুন।',
+            translate_placeholder_en_to_bn: 'অনুবাদের জন্য ইংরেজি লেখা লিখুন...',
+            translate_placeholder_bn_to_en: 'অনুবাদের জন্য বাংলা লেখা লিখুন...',
+            translate_direction_en_to_bn: 'ইংরেজি থেকে বাংলা',
+            translate_direction_bn_to_en: 'বাংলা থেকে ইংরেজি',
+            swap_lang_button: '↔️ ভাষা পরিবর্তন করুন',
+            translate_button: 'অনুবাদ করুন',
+
+            image_detector_title: '🔍 ছবি সনাক্তকারী', // Updated
+            image_detector_intro_msg: 'একটি ছবি আপলোড করুন এবং এআইকে এটি বর্ণনা করতে বা এর বিষয়বস্তু সম্পর্কে প্রশ্ন করতে বলুন।', // Updated
+            image_preview_placeholder: 'কোন ছবি নির্বাচন করা হয়নি', // Updated
+            choose_image_button: 'ছবি নির্বাচন করুন', // New
+            image_detector_prompt_placeholder: 'ছবি সম্পর্কে একটি প্রশ্ন জিজ্ঞাসা করুন (যেমন, "এই ছবিটি বর্ণনা করুন", "এই ছবিতে কি কি বস্তু আছে?", "এটি কোথায় তোলা হয়েছে?")।', // Updated
+            analyze_image_button: 'ছবি বিশ্লেষণ করুন', // Updated
+            image_detector_no_image_error: 'অনুগ্রহ করে প্রথমে একটি ছবি আপলোড করুন।', // Updated
+
+            settings_title: '⚙️ সেটিংস',
+            theme_heading: 'থিম মোড',
+            dark_mode_label: 'ডার্ক মোড',
+            light_mode_label: 'লাইট মোড',
+            language_heading: 'ভাষা',
+            english_label: 'English',
+            bengali_label: 'বাংলা',
+
+            input_error_math: 'অনুগ্রহ করে একটি গণিতিক অভিব্যক্তি বা সমীকরণ লিখুন।',
+            input_error_translate: 'অনুগ্রহ করে অনুবাদ করার জন্য লেখা লিখুন।',
+            mic_error_permission: '⚠️ মাইক্রোফোনের অনুমতি অস্বীকার করা হয়েছে। অনুগ্রহ করে আপনার ব্রাউজারের সেটিংসে এটি সক্ষম করুন।',
+            mic_error_generic: '⚠️ ভয়েস রেকগনিশন ত্রুটি: ',
+            bot_thinking: 'বট চিন্তা করছে…',
+            api_error: '⚠️ ত্রুটি: ',
+            api_empty_reply: '⚠️ এআই থেকে খালি উত্তর।',
+            network_error: '⚠️ নেটওয়ার্ক ত্রুটি: '
+        }
+    };
+
+    let currentLanguage = localStorage.getItem('language') || 'en'; // Default to English
+    let currentTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
+    let translationDirection = 'en-bn'; // Default translation direction: English to Bengali
+    let uploadedImageBase64 = null; // Stores Base64 for Image Detector
+
+    /* ----- DOM Element References ----- */
+    const body = document.body;
+
+    const navItemAI = document.getElementById('navItemAI');
+    const navItemMath = document.getElementById('navItemMath');
+    const navItemTranslate = document.getElementById('navItemTranslate');
+    const navItemImageDetector = document.getElementById('navItemImageDetector'); // Updated
+    const navItemSettings = document.getElementById('navItemSettings');
+    const sidebarTitle = document.getElementById('sidebarTitle');
+
+    const chatSection = document.getElementById('chat-section');
+    const chatTitle = document.getElementById('chatTitle');
+    const msgs = document.getElementById('msgs');
+    const chatInputBox = document.getElementById('input');
+    const sendChatBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
+
+    const mathSection = document.getElementById('math-section');
+    const mathTitle = document.getElementById('mathTitle');
+    const mathMsgs = document.getElementById('mathMsgs');
+    const mathInputBox = document.getElementById('mathInput');
+    const mathSendBtn = document.getElementById('mathSendBtn');
+
+    const translateSection = document.getElementById('translate-section');
+    const translateTitle = document.getElementById('translateTitle');
+    const translateContent = document.getElementById('translateContent');
+    const translateDirectionDisplay = document.getElementById('translateDirection');
+    const translateInput = document.getElementById('translateInput');
+    const translateOutput = document.getElementById('translateOutput');
+    const swapLangBtn = document.getElementById('swapLangBtn');
+    const translateBtn = document.getElementById('translateBtn');
+
+    // Image Detector Elements
+    const imageDetectorSection = document.getElementById('image-detector-section');
+    const imageDetectorTitle = document.getElementById('imageDetectorTitle');
+    const imageDetectorContent = document.getElementById('imageDetectorContent');
+    const imageDetectorIntroMsg = document.getElementById('imageDetectorIntroMsg');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const imagePreviewPlaceholder = document.getElementById('imagePreviewPlaceholder');
+    const uploadedImagePreview = document.getElementById('uploadedImagePreview');
+    const imageUploadInput = document.getElementById('imageUploadInput');
+    const chooseImageBtn = document.getElementById('chooseImageBtn'); // New button
+    const imageDetectorPrompt = document.getElementById('imageDetectorPrompt');
+    const analyzeImageBtn = document.getElementById('analyzeImageBtn');
+    const imageDetectorOutput = document.getElementById('imageDetectorOutput');
+
+
+    const settingsSection = document.getElementById('settings-section');
+    const settingsTitle = document.getElementById('settingsTitle');
+    const themeHeading = document.getElementById('themeHeading');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const darkModeLabel = document.getElementById('darkModeLabel');
+    const languageHeading = document.getElementById('languageHeading');
+    const langEnglishRadio = document.getElementById('langEnglishRadio');
+    const langBengaliRadio = document.getElementById('langBengaliRadio');
+    const langEnglishLabel = document.getElementById('langEnglishLabel');
+    const langBengaliLabel = document.getElementById('langBengaliLabel');
+
+
+    /* ----- Navigation & Section Visibility ----- */
+    function navTo(id, el){
+        console.log('Navigating to:', id);
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (el) el.classList.add('active');
+
+        // Hide all sections based on their current IDs
+        document.getElementById('chat-section').style.display = 'none';
+        document.getElementById('math-section').style.display = 'none';
+        document.getElementById('translate-section').style.display = 'none';
+        document.getElementById('image-detector-section').style.display = 'none'; // Updated
+        document.getElementById('settings-section').style.display = 'none';
+
+        // Show the selected section
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    /* ----- Theme Mode Logic ----- */
+    function applyTheme(theme) {
+        console.log('Applying theme:', theme);
+        if (theme === 'dark') {
+            body.classList.remove('light-mode');
+            darkModeToggle.checked = false;
+        } else {
+            body.classList.add('light-mode');
+            darkModeToggle.checked = true;
+        }
+        localStorage.setItem('theme', theme);
+        updateUIforLanguage(currentLanguage); // Re-run to update dynamic labels
+    }
+
+    darkModeToggle.addEventListener('change', () => {
+        if (darkModeToggle.checked) {
+            currentTheme = 'light';
+        } else {
+            currentTheme = 'dark';
+        }
+        applyTheme(currentTheme);
+    });
+
+    /* ----- Language Switching Logic ----- */
+    function updateUIforLanguage(lang) {
+        console.log('Updating UI for language:', lang);
+        currentLanguage = lang;
+        // Update sidebar
+        sidebarTitle.textContent = translations[lang].sidebar_title;
+        navItemAI.innerHTML = translations[lang].sidebar_ask_ai;
+        navItemMath.innerHTML = translations[lang].sidebar_math_solver;
+        navItemTranslate.innerHTML = translations[lang].sidebar_translate;
+        navItemImageDetector.innerHTML = translations[lang].sidebar_image_detector; // Updated
+        navItemSettings.innerHTML = translations[lang].sidebar_settings;
+
+        // Update AI Chat Section
+        chatTitle.textContent = translations[lang].chat_title;
+        chatInputBox.placeholder = translations[lang].chat_placeholder;
+        sendChatBtn.textContent = translations[lang].send_button;
+        if (micBtn) micBtn.textContent = translations[lang].mic_button;
+
+        // Update Math Solver Section
+        mathTitle.textContent = translations[lang].math_title;
+        mathInputBox.placeholder = translations[lang].math_placeholder;
+        mathSendBtn.textContent = translations[lang].solve_button;
+
+        // Update Translate Section
+        translateTitle.textContent = translations[lang].translate_title;
+        swapLangBtn.textContent = translations[lang].swap_lang_button;
+        translateBtn.textContent = translations[lang].translate_button;
+        updateTranslationDirectionDisplay(); // Update direction display and input placeholder
+
+        // Update Image Detector Section
+        imageDetectorTitle.textContent = translations[lang].image_detector_title;
+        imageDetectorIntroMsg.textContent = translations[lang].image_detector_intro_msg;
+        imagePreviewPlaceholder.textContent = translations[lang].image_preview_placeholder;
+        chooseImageBtn.textContent = translations[lang].choose_image_button; // New button text
+        imageDetectorPrompt.placeholder = translations[lang].image_detector_prompt_placeholder;
+        analyzeImageBtn.textContent = translations[lang].analyze_image_button;
+
+        // Update Settings Section
+        settingsTitle.textContent = translations[lang].settings_title;
+        themeHeading.textContent = translations[lang].theme_heading;
+        darkModeLabel.textContent = darkModeToggle.checked ? translations[lang].light_mode_label : translations[lang].dark_mode_label;
+        languageHeading.textContent = translations[lang].language_heading;
+        langEnglishLabel.textContent = translations[lang].english_label;
+        langBengaliLabel.textContent = translations[lang].bengali_label;
+
+        // Set radio button checked state
+        if (lang === 'en') {
+            langEnglishRadio.checked = true;
+        } else {
+            langBengaliRadio.checked = true;
+        }
+        localStorage.setItem('language', lang);
+
+        // Update initial bot messages in history (crucial for AI persona)
+        chatHistory = [{ role: 'model', parts: [{ text: translations[currentLanguage].chat_initial_bot_message_prompt }] }];
+        mathChatHistory = [
+            { role: 'user', parts: [{ text: translations[currentLanguage].math_solver_initial_prompt }] },
+            { role: 'model', parts: [{ text: translations[currentLanguage].math_initial_bot_message }] }
+        ];
+
+        // Clear existing messages and add the initial one again to reflect language change
+        msgs.innerHTML = '';
+        add(translations[currentLanguage].chat_initial_bot_message_prompt, 'bot', msgs);
+
+        mathMsgs.innerHTML = '';
+        add(translations[currentLanguage].math_initial_bot_message, 'bot', mathMsgs);
+
+        // Re-construct translateContent to ensure elements are in correct order after language update
+        translateContent.innerHTML = '';
+        const initialTranslateMessageDiv = document.createElement('div');
+        initialTranslateMessageDiv.className = 'msg bot';
+        initialTranslateMessageDiv.textContent = translations[currentLanguage].translate_initial_message;
+        translateContent.appendChild(initialTranslateMessageDiv);
+        translateContent.appendChild(translateDirectionDisplay);
+        translateContent.appendChild(translateInput);
+        const translateRow = document.createElement('div');
+        translateRow.className = 'row';
+        translateRow.appendChild(swapLangBtn);
+        translateRow.appendChild(translateBtn);
+        translateContent.appendChild(translateRow);
+        translateContent.appendChild(translateOutput);
+
+        // Update speech recognition language
+        if (recognition) {
+            recognition.lang = lang === 'bn' ? 'bn-BD' : 'en-US';
+            console.log('Speech recognition language set to:', recognition.lang);
+        }
+    }
+
+    langEnglishRadio.addEventListener('change', () => updateUIforLanguage('en'));
+    langBengaliRadio.addEventListener('change', () => updateUIforLanguage('bn'));
+
+
+    /* ----- AI Chat & Math Solver Integration ----- */
+    // ⚠️⚠️⚠️ SECURITY WARNING:
+    // Embedding your API key directly in client-side code is a MAJOR SECURITY RISK!
+    // This is ONLY for very basic, private demonstrations and should NEVER be used
+    // for a public or production website. Your API key can be stolen.
+    const API_KEY='AIzaSyAqcXAO4TC3zIqjFekLbssQpHEQnl6xBXk'; // Your provided API key
+    const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+    let chatHistory = []; // Initialized in updateUIforLanguage
+    let mathChatHistory = []; // Initialized in updateUIforLanguage
+
+    // Generalized add function to append messages to a target element
+    // `isDirectOutput` is true for output areas that are not chat-like (e.g., translate, image detector output)
+    const add = (text, type, targetElement, isDirectOutput = false) => {
+        // Special handling for direct output elements (not typical chat messages)
+        if (isDirectOutput && (targetElement === translateOutput || targetElement === imageDetectorOutput)) { // Updated
+            targetElement.textContent = text;
+            targetElement.style.color = type === 'error' ? 'var(--red)' : 'var(--light)';
+            console.log(targetElement.id, 'updated directly:', text);
+            return;
+        }
+        // Standard chat message handling
+        const d = document.createElement('div');
+        d.className = 'msg ' + type;
+        d.textContent = text;
+        targetElement.appendChild(d);
+        targetElement.scrollTop = targetElement.scrollHeight;
+        console.log('Message added to', targetElement.id, ':', text);
+        return d;
+    };
+
+    // Generic async function to ask the AI
+    async function askAI(query, targetElement, contextHistory, isDirectOutput = false, imageData = null) {
+      console.log('askAI called. Query:', query, 'Target:', targetElement.id, 'Direct Output:', isDirectOutput, 'Image Data:', !!imageData);
+      if (!API_KEY || API_KEY === 'YOUR_GEMINI_API_KEY') {
+          const errorMsg = "⚠️ ERROR: Gemini API Key is not set! Please replace 'YOUR_GEMINI_API_KEY' in the code with your actual key.";
+          add(errorMsg, 'error', targetElement, isDirectOutput);
+          console.error(errorMsg);
+          return;
+      }
+
+      let waitMsgDiv;
+      if (!isDirectOutput) {
+        waitMsgDiv = add(translations[currentLanguage].bot_thinking, 'bot', targetElement);
+      } else {
+        // For direct output, show thinking message directly
+        add(translations[currentLanguage].bot_thinking, 'bot', targetElement, true);
+      }
+      
+      let contentsToSend = [];
+
+      if (imageData) {
+        // For image detector, combine text and image parts in a single content block
+        contentsToSend.push({
+            parts: [
+                { text: query },
+                { inline_data: { mime_type: imageData.mimeType, data: imageData.base64 } }
+            ]
+        });
+        console.log('Multimodal contents prepared:', contentsToSend);
+      } else {
+        // For text-only requests, append to context history
+        contentsToSend = [...contextHistory];
+        contentsToSend.push({ role: 'user', parts: [{ text: query }] });
+        console.log('Text-only contents prepared:', contentsToSend);
+      }
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: contentsToSend,
+            generationConfig: { maxOutputTokens: 1024 }
+          })
+        });
+        const data = await res.json();
+        console.log('API Response:', data);
+
+        if (data.error) {
+          const errorMsg = translations[currentLanguage].api_error + data.error.message;
+          add(errorMsg, 'error', targetElement, isDirectOutput);
+          console.error('API Error:', data.error);
+          return;
+        }
+
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || translations[currentLanguage].api_empty_reply;
+        
+        if (!isDirectOutput) {
+            waitMsgDiv.textContent = reply; // Update existing thinking message
+            // Update history only if it's a regular chat (not direct translate/image output)
+            contextHistory.push({ role: 'user', parts: [{ text: query }] }); // User query
+            contextHistory.push({ role: 'model', parts: [{ text: reply }] }); // AI response
+        } else {
+            add(reply, 'bot', targetElement, true); // Direct output for translator/image detector
+        }
+        console.log('AI Reply:', reply);
+
+      } catch (e) {
+        const errorMsg = translations[currentLanguage].network_error + e.message;
+        add(errorMsg, 'error', targetElement, isDirectOutput);
+        console.error('Network or Fetch Error:', e);
+      }
+    }
+
+    // --- Chat Specific Functions ---
+    function sendChatMessage() {
+      const question = chatInputBox.value.trim();
+      if (!question) return;
+      chatInputBox.value = '';
+      add('You: ' + question, 'user', msgs);
+      askAI(question, msgs, [...chatHistory]);
+    }
+    sendChatBtn.onclick = sendChatMessage;
+    chatInputBox.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+
+    // --- Speech Recognition for AI Chat ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let isListening = false;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.interimResults = false;
+        recognition.lang = currentLanguage === 'bn' ? 'bn-BD' : 'en-US';
+        console.log('SpeechRecognition API available. Initial lang:', recognition.lang);
+
+        recognition.onstart = () => {
+            isListening = true;
+            micBtn.textContent = translations[currentLanguage].mic_listening;
+            micBtn.classList.add('listening');
+            chatInputBox.placeholder = translations[currentLanguage].mic_listening;
+            chatInputBox.disabled = true;
+            console.log('SpeechRecognition started.');
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            chatInputBox.value = transcript;
+            console.log('SpeechRecognition result:', transcript);
+            sendChatMessage();
+        };
+
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.textContent = translations[currentLanguage].mic_button;
+            micBtn.classList.remove('listening');
+            chatInputBox.placeholder = translations[currentLanguage].chat_placeholder;
+            chatInputBox.disabled = false;
+            console.log('SpeechRecognition ended.');
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            if (event.error === 'not-allowed') {
+                add(translations[currentLanguage].mic_error_permission, 'error', msgs);
+            } else {
+                add(translations[currentLanguage].mic_error_generic + event.error, 'error', msgs);
+            }
+            micBtn.textContent = translations[currentLanguage].mic_button;
+            micBtn.classList.remove('listening');
+            chatInputBox.placeholder = translations[currentLanguage].chat_placeholder;
+            chatInputBox.disabled = false;
+            isListening = false;
+        };
+
+        micBtn.onclick = () => {
+            if (!isListening) {
+                console.log('Mic button clicked, starting recognition.');
+                recognition.start();
+            } else {
+                console.log('Mic button clicked, stopping recognition.');
+                recognition.stop();
+            }
+        };
+    } else {
+        if (micBtn) micBtn.style.display = 'none'; // Hide if not supported
+        console.warn('Speech Recognition API not supported in this browser. Microphone button will be hidden.');
+        console.warn('Note: Speech Recognition often requires HTTPS or localhost for security.');
+    }
+
+
+    // --- Math Solver Specific Functions ---
+    function sendMathMessage() {
+      const mathQuestion = mathInputBox.value.trim();
+      if (!mathQuestion) {
+        add(translations[currentLanguage].input_error_math, 'error', mathMsgs);
+        return;
+      }
+      mathInputBox.value = '';
+      add('You: ' + mathQuestion, 'user', mathMsgs);
+
+      const queryWithInstruction = `Solve this math problem precisely and show steps in a way a child can understand: ${mathQuestion}`;
+      askAI(queryWithInstruction, mathMsgs, [...mathChatHistory]);
+    }
+    mathSendBtn.onclick = sendMathMessage;
+    mathInputBox.addEventListener('keypress', e => { if (e.key === 'Enter') sendMathMessage(); });
+
+
+    // --- Translate Specific Functions ---
+    function updateTranslationDirectionDisplay() {
+        if (translationDirection === 'en-bn') {
+            translateDirectionDisplay.textContent = translations[currentLanguage].translate_direction_en_to_bn;
+            translateInput.placeholder = translations[currentLanguage].translate_placeholder_en_to_bn;
+        } else {
+            translateDirectionDisplay.textContent = translations[currentLanguage].translate_direction_bn_to_en;
+            translateInput.placeholder = translations[currentLanguage].translate_placeholder_bn_to_en;
+        }
+        console.log('Translation direction updated to:', translationDirection);
+    }
+
+    function swapTranslationDirection() {
+        translationDirection = translationDirection === 'en-bn' ? 'bn-en' : 'en-bn';
+        updateTranslationDirectionDisplay();
+        translateInput.value = ''; // Clear input on swap
+        translateOutput.textContent = ''; // Clear output on swap
+        console.log('Swapped translation direction.');
+    }
+    swapLangBtn.onclick = swapTranslationDirection;
+
+    async function sendTranslation() {
+        const textToTranslate = translateInput.value.trim();
+        if (!textToTranslate) {
+            add(translations[currentLanguage].input_error_translate, 'error', translateOutput, true);
+            return;
+        }
+        
+        let prompt;
+        if (translationDirection === 'en-bn') {
+            prompt = `Translate the following English text to Bengali: "${textToTranslate}"`;
+        } else {
+            prompt = `Translate the following Bengali text to English: "${textToTranslate}"`;
+        }
+
+        translateInput.value = '';
+        console.log('Sending translation request. Prompt:', prompt);
+        await askAI(prompt, translateOutput, [], true); // No history for direct translation, isDirectOutput=true
+    }
+    translateBtn.onclick = sendTranslation;
+    translateInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendTranslation(); });
+
+
+    // --- Image Detector Functions ---
+    // Trigger hidden file input when "Choose Image" button is clicked
+    chooseImageBtn.onclick = () => {
+        imageUploadInput.click();
+    };
+
+    imageUploadInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImagePreview.src = e.target.result;
+                uploadedImagePreview.style.display = 'block';
+                imagePreviewPlaceholder.style.display = 'none';
+
+                // Extract base64 data and mime type
+                const base64String = e.target.result.split(',')[1];
+                const mimeType = file.type;
+                uploadedImageBase64 = { base64: base64String, mimeType: mimeType };
+                console.log('Image uploaded and converted to Base64. Mime Type:', mimeType);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            uploadedImagePreview.src = '';
+            uploadedImagePreview.style.display = 'none';
+            imagePreviewPlaceholder.style.display = 'block';
+            uploadedImageBase64 = null;
+            console.log('No image selected.');
+        }
+        imageDetectorOutput.textContent = ''; // Clear previous output
+    });
+
+    async function analyzeImage() {
+        const prompt = imageDetectorPrompt.value.trim();
+        if (!uploadedImageBase64) {
+            add(translations[currentLanguage].image_detector_no_image_error, 'error', imageDetectorOutput, true);
+            return;
+        }
+        if (!prompt) {
+            // Default prompt if user doesn't provide one
+            imageDetectorPrompt.value = translations[currentLanguage].image_detector_prompt_placeholder; // Re-set placeholder text
+            // Use a default description prompt
+            await askAI('Describe this image in detail.', imageDetectorOutput, [], true, uploadedImageBase64);
+            return;
+        }
+
+        imageDetectorPrompt.value = '';
+        add('You asked: ' + prompt, 'user', imageDetectorContent, false); // Add user prompt to display area
+        await askAI(prompt, imageDetectorOutput, [], true, uploadedImageBase64); // Pass image data
+    }
+    analyzeImageBtn.onclick = analyzeImage;
+    imageDetectorPrompt.addEventListener('keypress', e => { if (e.key === 'Enter') analyzeImage(); });
+
+
+    /* ----- Initialization on Page Load ----- */
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM Content Loaded. Initializing...');
+
+        // Apply saved theme first
+        applyTheme(currentTheme);
+
+        // Apply saved language and update all UI elements
+        updateUIforLanguage(currentLanguage);
+
+        // Show the initial section (AI Chat) - navItemAI is the default active
+        navTo('chat-section', navItemAI);
+
+        console.log('Initialization complete.');
+    });
+
+  </script>
+</body>
+</html>
